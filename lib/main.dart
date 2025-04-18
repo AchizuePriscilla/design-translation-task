@@ -1,5 +1,5 @@
-import 'package:design_task/home_page.dart';
-import 'package:design_task/palette.dart';
+import 'package:design_task/real_estate_app.dart';
+import 'package:design_task/utils/palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -15,14 +15,14 @@ class TranslationTestApp extends StatelessWidget {
         designSize: const Size(390, 844),
         builder: (context, child) {
           return MaterialApp(
-            title: 'Translation Test',
+            title: 'Real Estate App',
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
               fontFamily: 'Euclid',
               colorScheme: ColorScheme.fromSeed(seedColor: Palette.primary),
               useMaterial3: true,
             ),
-            home: const HomePage(),
+            home: const RealEstateApp(),
           );
         });
   }
