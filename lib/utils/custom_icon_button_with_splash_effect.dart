@@ -7,10 +7,14 @@ class CustomIconButtonWithSplashEffect extends StatefulWidget {
     super.key,
     required this.onTap,
     required this.child,
+    required this.outerWidthAndHeight,
+    required this.innerWidthAndHeight,
   });
 
   final Function() onTap;
   final Widget child;
+  final double outerWidthAndHeight;
+  final double innerWidthAndHeight;
   @override
   State<CustomIconButtonWithSplashEffect> createState() =>
       _CustomIconButtonWithSplashEffectState();
@@ -57,9 +61,9 @@ class _CustomIconButtonWithSplashEffectState
       onTap: () async {
         await _innerSplashController.forward();
         _outerSplashController.forward();
-        widget.onTap();
         _innerSplashController.reverse();
         _outerSplashController.reset();
+        widget.onTap();
       },
       child: Stack(
         alignment: Alignment.center,
@@ -74,8 +78,10 @@ class _CustomIconButtonWithSplashEffectState
                     return Visibility(
                       visible: _outerSplashRadiusValue.value < 1,
                       child: Container(
-                        width: 50.h - (15.h * _outerSplashRadiusValue.value),
-                        height: 50.h - (15.h * _outerSplashRadiusValue.value),
+                        width: widget.outerWidthAndHeight -
+                            (15.h * _outerSplashRadiusValue.value),
+                        height: widget.outerWidthAndHeight -
+                            (15.h * _outerSplashRadiusValue.value),
                         decoration: BoxDecoration(
                           color: Colors.transparent,
                           borderRadius: BorderRadius.circular(30.r),
@@ -90,8 +96,10 @@ class _CustomIconButtonWithSplashEffectState
                     return Visibility(
                       visible: _innerSplashRadiusValue.value < 1,
                       child: Container(
-                        width: 31.h + (20.h * _innerSplashRadiusValue.value),
-                        height: 31.h + (20.h * _innerSplashRadiusValue.value),
+                        width: widget.innerWidthAndHeight +
+                            (20.h * _innerSplashRadiusValue.value),
+                        height: widget.innerWidthAndHeight +
+                            (20.h * _innerSplashRadiusValue.value),
                         decoration: BoxDecoration(
                           color: Colors.transparent,
                           borderRadius: BorderRadius.circular(30.r),

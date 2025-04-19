@@ -208,6 +208,8 @@ class BottomButtons extends StatelessWidget {
                       animations.cardController.forward();
                       animations.markerSizeController.reverse();
                     },
+                    outerWidthAndHeight: 50.h,
+                    innerWidthAndHeight: 31.h,
                     child: BlurredButtonWidget(),
                   ),
                 ),

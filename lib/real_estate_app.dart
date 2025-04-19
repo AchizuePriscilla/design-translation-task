@@ -1,3 +1,4 @@
+import 'package:design_task/utils/custom_icon_button_with_splash_effect.dart';
 import 'package:design_task/views/home_view.dart';
 import 'package:design_task/views/map_view.dart';
 import 'package:design_task/utils/palette.dart';
@@ -11,9 +12,11 @@ class RealEstateApp extends StatefulWidget {
   State<RealEstateApp> createState() => _RealEstateAppState();
 }
 
-class _RealEstateAppState extends State<RealEstateApp> {
+class _RealEstateAppState extends State<RealEstateApp>
+    with SingleTickerProviderStateMixin {
   int _selectedPage = 2;
-  final PageController _pageController = PageController(initialPage: 2);
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
   final List<IconData> _icons = [
     Icons.search_rounded,
     Icons.chat_bubble_rounded,
@@ -21,19 +24,50 @@ class _RealEstateAppState extends State<RealEstateApp> {
     Icons.favorite_rounded,
     Icons.person_2_rounded,
   ];
+  final List<Widget> _pages = [
+    MapPage(),
+    Container(
+      color: Palette.primary,
+    ),
+    HomeView(),
+    Container(
+      color: Palette.primaryDark,
+    ),
+    Container(
+      color: Palette.grey,
+    ),
+  ];
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(alignment: Alignment.bottomCenter, children: [
-        PageView(
-          controller: _pageController,
-          children: [
-            MapPage(),
-            SizedBox(),
-            HomeView(),
-            SizedBox(),
-            SizedBox(),
-          ],
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _pages[_selectedPage],
+          transitionBuilder: (child, animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
         ),
         Positioned(
           bottom: 30.h,
@@ -51,15 +85,16 @@ class _RealEstateAppState extends State<RealEstateApp> {
                 return BottomNavigationItem(
                   iconData: _icons[index],
                   isSelected: _selectedPage == index,
-                  onTap: () {
+                  fadeController: _fadeController,
+                  fadeAnimation: _fadeAnimation,
+                  onTap: () async {
+                    if (_selectedPage != index) {
+                      await _fadeController.forward();
+                    }
                     setState(() {
                       _selectedPage = index;
                     });
-                    _pageController.animateToPage(
-                      index,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
+                    _fadeController.reverse();
                   },
                 );
               }))),
@@ -74,28 +109,43 @@ class BottomNavigationItem extends StatelessWidget {
     super.key,
     required this.iconData,
     required this.onTap,
+    required this.fadeController,
+    required this.fadeAnimation,
     this.isSelected = false,
   });
   final IconData iconData;
   final bool isSelected;
-  final Function()? onTap;
+  final Function() onTap;
+  final AnimationController fadeController;
+  final Animation<double> fadeAnimation;
+
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return CustomIconButtonWithSplashEffect(
       onTap: onTap,
-      child: Container(
-        height: 40.h,
-        width: 40.h,
-        margin: EdgeInsets.symmetric(horizontal: 2.w),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isSelected ? Palette.primary : null,
-        ),
-        child: Icon(
-          iconData,
-          size: 22.sp,
-          color: Palette.white,
-        ),
+      outerWidthAndHeight: 50.h,
+      innerWidthAndHeight: 20.h,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          FadeTransition(
+            opacity: fadeAnimation,
+            child: Container(
+              height: 40.h,
+              width: 40.h,
+              margin: EdgeInsets.symmetric(horizontal: 2.w),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? Palette.primary : null,
+              ),
+            ),
+          ),
+          Icon(
+            iconData,
+            size: 22.sp,
+            color: Palette.white,
+          ),
+        ],
       ),
     );
   }
