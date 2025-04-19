@@ -1,5 +1,5 @@
 import 'dart:ui';
-
+import 'package:design_task/utils/custom_icon_button_with_splash_effect.dart';
 import 'package:design_task/utils/custom_spacer.dart';
 import 'package:design_task/utils/palette.dart';
 import 'package:flutter/material.dart';
@@ -25,46 +25,30 @@ final List<LatLng> markerPoints = [
 ];
 
 class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
-  late AnimationController _cardController;
-  late AnimationController _innerSplashController;
-  late AnimationController _outerSplashController;
-  late Animation<double> _cardScaleValue;
-  late Animation<double> _innerSplashRadiusValue;
-  late Animation<double> _outerSplashRadiusValue;
+  late final MapViewAnimations animations;
+
   @override
   void initState() {
     super.initState();
-    _cardController = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 500),
-    );
-    _innerSplashController = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 200),
-    );
-    _outerSplashController = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 100),
-    );
-    _cardScaleValue = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _cardController, curve: Curves.easeInOut),
-    );
-    _innerSplashRadiusValue = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _innerSplashController, curve: Curves.easeInOut),
-    );
-    _outerSplashRadiusValue = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _outerSplashController, curve: Curves.easeInOut),
-    );
+    animations = MapViewAnimations(this);
+    Future.microtask(() => _scaleElements());
   }
 
-  @override
-  void dispose() {
-    _cardController.dispose();
-    _innerSplashController.dispose();
-    _outerSplashController.dispose();
-    super.dispose();
+  Future<void> _scaleElements() async {
+    await animations.elementsScaleController.forward();
+    await animations.markerScaleController.forward();
+    animations.markerTextFadeController.forward();
   }
 
+  List<String> locations = [
+    "6,95mn P",
+    "7,8mn P",
+    "11mn P",
+    "13,3mn P",
+    "Kaduna",
+    "10,3mn P",
+    "8,5mn P",
+  ];
   @override
   Widget build(BuildContext context) {
     return FlutterMap(
@@ -80,241 +64,253 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
             retinaMode: true,
             userAgentPackageName: 'com.example.app',
           ),
-          MarkerLayer(
-            markers: markerPoints
-                .map((point) => Marker(
-                      point: point,
-                      width: 50.w,
-                      height: 50.h,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Palette.primary,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(12.r),
-                            topRight: Radius.circular(12.r),
-                            bottomRight: Radius.circular(12.r),
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.location_city,
-                          color: Colors.white,
-                          size: 20.sp,
-                        ),
-                      ),
-                    ))
-                .toList(),
+          ValueListenableBuilder(
+              valueListenable: animations.markerSize,
+              builder: (context, value, child) {
+                return MarkerLayer(
+                  markers: markerPoints
+                      .map((point) => Marker(
+                            point: point,
+                            width: 70.w * value,
+                            height: 50.h,
+                            child: ScaleTransition(
+                              scale: animations.markerScale,
+                              alignment: Alignment.bottomLeft,
+                              child: Container(
+                                width: 70.w * value,
+                                decoration: BoxDecoration(
+                                  color: Palette.primary,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(12.r),
+                                    topRight: Radius.circular(12.r),
+                                    bottomRight: Radius.circular(12.r),
+                                  ),
+                                ),
+                                child: value < .8
+                                    ? Icon(
+                                        Icons.location_city,
+                                        color: Palette.white.withValues(
+                                            alpha: (1.0 - value) * 2),
+                                        size: 20.sp,
+                                      )
+                                    : value == 1
+                                        ? Center(
+                                            child: FadeTransition(
+                                            opacity: animations.markerTextFade,
+                                            child: Text(
+                                              locations[
+                                                  markerPoints.indexOf(point)],
+                                              style: TextStyle(
+                                                color: Palette.white.withValues(
+                                                    alpha: (value - 0.8) / 0.2),
+                                                fontSize: 14.sp,
+                                              ),
+                                            ),
+                                          ))
+                                        : SizedBox.shrink(),
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                );
+              }),
+          SearchRow(animations: animations),
+          BottomButtons(
+            animations: animations,
           ),
-          Positioned(
-            top: 60.h,
-            left: 20.w,
-            right: 20.w,
-            child: Row(
-              children: [
-                Expanded(
-                    child: TextField(
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Palette.black,
+          OptionsCard(animations: animations),
+        ]);
+  }
+}
+
+class OptionsCard extends StatelessWidget {
+  const OptionsCard({
+    super.key,
+    required this.animations,
+  });
+
+  final MapViewAnimations animations;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+        bottom: 155.h,
+        left: 20.w,
+        child: GestureDetector(
+          onTap: () {
+            animations.cardController.reverse();
+            animations.markerSizeController.forward();
+          },
+          child: ScaleTransition(
+            scale: animations.cardScaleValue,
+            alignment: Alignment.bottomLeft,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+              decoration: BoxDecoration(
+                color: Palette.white,
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CardRow(
+                    iconData: Icons.beenhere_outlined,
+                    title: "Cozy areas",
                   ),
-                  decoration: InputDecoration(
-                    hintText: 'Abuja, Nigeria',
-                    enabled: false,
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: Palette.black,
-                    ),
-                    hintStyle: TextStyle(
-                      fontSize: 14.sp,
-                      color: Palette.black,
-                    ),
-                    filled: true,
-                    fillColor: Palette.white,
-                    disabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30.r),
-                      borderSide: BorderSide(
-                        color: Palette.white,
-                      ),
-                    ),
+                  CardRow(
+                    iconData: Icons.wallet_outlined,
+                    color: Palette.primary,
+                    title: "Price",
                   ),
-                )),
-                CustomSpacer(horizontal: true),
-                Container(
-                  width: 50.h,
-                  height: 50.h,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
+                  CardRow(
+                    iconData: Icons.location_on,
+                    title: "Infrastructure",
                   ),
-                  child: Icon(Icons.filter_list, color: Colors.black),
-                ),
-              ],
+                  CardRow(
+                    iconData: Icons.layers_outlined,
+                    title: "Without any layer",
+                  )
+                ],
+              ),
             ),
           ),
-          Positioned(
-              bottom: 100.h,
-              right: 30.w,
-              left: 30.w,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Column(
-                    children: [
-                      InkWell(
-                        onTap: () async {
-                          await _innerSplashController.forward();
-                          _outerSplashController.forward();
-                          _cardController.forward();
-                          _innerSplashController.reverse();
-                          _outerSplashController.reset();
-                        },
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            BlurredButtonWidget(),
-                            Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                AnimatedBuilder(
-                                    animation: _outerSplashRadiusValue,
-                                    builder: (context, child) {
-                                      return Visibility(
-                                        visible:
-                                            _outerSplashRadiusValue.value < 1,
-                                        child: Container(
-                                          width: 50.h -
-                                              (15.h *
-                                                  _outerSplashRadiusValue
-                                                      .value),
-                                          height: 50.h -
-                                              (15.h *
-                                                  _outerSplashRadiusValue
-                                                      .value),
-                                          decoration: BoxDecoration(
-                                            color: Colors.transparent,
-                                            borderRadius:
-                                                BorderRadius.circular(30.r),
-                                            border: Border.all(
-                                                color: Palette.white),
-                                          ),
-                                        ),
-                                      );
-                                    }),
-                                AnimatedBuilder(
-                                    animation: _innerSplashRadiusValue,
-                                    builder: (context, child) {
-                                      return Visibility(
-                                        visible:
-                                            _innerSplashRadiusValue.value < 1,
-                                        child: Container(
-                                          width: 31.h +
-                                              (20.h *
-                                                  _innerSplashRadiusValue
-                                                      .value),
-                                          height: 31.h +
-                                              (20.h *
-                                                  _innerSplashRadiusValue
-                                                      .value),
-                                          decoration: BoxDecoration(
-                                            color: Colors.transparent,
-                                            borderRadius:
-                                                BorderRadius.circular(30.r),
-                                            border: Border.all(
-                                              color: Palette.white,
-                                              width: 5.h -
-                                                  (4.h *
-                                                      _innerSplashRadiusValue
-                                                          .value),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      CustomSpacer(),
-                      BlurredButtonWidget()
-                    ],
+        ));
+  }
+}
+
+class BottomButtons extends StatelessWidget {
+  const BottomButtons({super.key, required this.animations});
+
+  final MapViewAnimations animations;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+        bottom: 100.h,
+        right: 30.w,
+        left: 30.w,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Column(
+              children: [
+                ScaleTransition(
+                  scale: animations.elementsScaleValue,
+                  alignment: Alignment.center,
+                  child: CustomIconButtonWithSplashEffect(
+                    onTap: () {
+                      animations.cardController.forward();
+                      animations.markerSizeController.reverse();
+                    },
                   ),
-                  const Spacer(),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(30.r),
-                    child: Container(
-                      height: 50.h,
-                      padding: EdgeInsets.symmetric(
-                          vertical: 10.h, horizontal: 15.w),
-                      decoration: BoxDecoration(
-                        color: Palette.white.withValues(alpha: .5),
-                        borderRadius: BorderRadius.circular(25.r),
-                      ),
-                      child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-                          child: Row(
-                            children: [
-                              Icon(Icons.filter_list,
-                                  color: Palette.white, size: 20.sp),
-                              CustomSpacer(horizontal: true),
-                              Text("List of variants",
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
-                                    color: Palette.white,
-                                  )),
-                            ],
-                          )),
-                    ),
-                  ),
-                ],
-              )),
-          Positioned(
-              bottom: 155.h,
-              left: 20.w,
-              child: GestureDetector(
-                onTap: () {
-                  _cardController.reverse();
-                },
-                child: AnimatedBuilder(
-                  animation: _cardController,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: _cardScaleValue.value,
-                      alignment: Alignment.bottomLeft,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 10.w, vertical: 10.h),
-                        decoration: BoxDecoration(
-                          color: Palette.white,
-                          borderRadius: BorderRadius.circular(20.r),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CardRow(
-                              iconData: Icons.beenhere_outlined,
-                              title: "Cozy areas",
-                            ),
-                            CardRow(
-                              iconData: Icons.wallet_outlined,
-                              color: Palette.primary,
-                              title: "Price",
-                            ),
-                            CardRow(
-                              iconData: Icons.location_on,
-                              title: "Infrastructure",
-                            ),
-                            CardRow(
-                              iconData: Icons.layers_outlined,
-                              title: "Without any layer",
-                            )
-                          ],
-                        ),
-                      ),
-                    );
-                  },
                 ),
-              )),
-        ]);
+                CustomSpacer(),
+                ScaleTransition(
+                    scale: animations.elementsScaleValue,
+                    alignment: Alignment.center,
+                    child: BlurredButtonWidget())
+              ],
+            ),
+            const Spacer(),
+            ScaleTransition(
+              scale: animations.elementsScaleValue,
+              alignment: Alignment.center,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(30.r),
+                child: Container(
+                  height: 50.h,
+                  padding:
+                      EdgeInsets.symmetric(vertical: 10.h, horizontal: 15.w),
+                  decoration: BoxDecoration(
+                    color: Palette.white.withValues(alpha: .5),
+                    borderRadius: BorderRadius.circular(25.r),
+                  ),
+                  child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+                      child: Row(
+                        children: [
+                          Icon(Icons.filter_list,
+                              color: Palette.white, size: 20.sp),
+                          CustomSpacer(horizontal: true),
+                          Text("List of variants",
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                color: Palette.white,
+                              )),
+                        ],
+                      )),
+                ),
+              ),
+            ),
+          ],
+        ));
+  }
+}
+
+class SearchRow extends StatelessWidget {
+  const SearchRow({
+    super.key,
+    required this.animations,
+  });
+
+  final MapViewAnimations animations;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: 60.h,
+      left: 20.w,
+      right: 20.w,
+      child: Row(
+        children: [
+          Expanded(
+              child: ScaleTransition(
+            scale: animations.elementsScaleValue,
+            alignment: Alignment.center,
+            child: TextField(
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: Palette.black,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Abuja, Nigeria',
+                enabled: false,
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: Palette.black,
+                ),
+                hintStyle: TextStyle(
+                  fontSize: 14.sp,
+                  color: Palette.black,
+                ),
+                filled: true,
+                fillColor: Palette.white,
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30.r),
+                  borderSide: BorderSide(
+                    color: Palette.white,
+                  ),
+                ),
+              ),
+            ),
+          )),
+          CustomSpacer(horizontal: true),
+          ScaleTransition(
+            scale: animations.elementsScaleValue,
+            alignment: Alignment.center,
+            child: Container(
+              width: 50.h,
+              height: 50.h,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.filter_list, color: Colors.black),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -372,5 +368,49 @@ class CardRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class MapViewAnimations {
+  final AnimationController markerScaleController;
+  final AnimationController markerSizeController;
+  final AnimationController markerTextFadeController;
+  final AnimationController cardController;
+  final AnimationController elementsScaleController;
+
+  late final Animation<double> cardScaleValue;
+  late final Animation<double> elementsScaleValue;
+  late final Animation<double> markerScale;
+  late final Animation<double> markerSize;
+  late final Animation<double> markerTextFade;
+
+  MapViewAnimations(TickerProvider vsync)
+      : markerScaleController = AnimationController(
+            vsync: vsync, duration: Duration(milliseconds: 500)),
+        markerSizeController = AnimationController(
+            vsync: vsync, duration: Duration(milliseconds: 500)),
+        markerTextFadeController = AnimationController(
+            vsync: vsync, duration: Duration(milliseconds: 500)),
+        cardController = AnimationController(
+            vsync: vsync, duration: Duration(milliseconds: 500)),
+        elementsScaleController =
+            AnimationController(vsync: vsync, duration: Duration(seconds: 1)) {
+    markerScale =
+        Tween<double>(begin: 0, end: 1).animate(markerScaleController);
+    markerSize =
+        Tween<double>(begin: 1, end: 0.5).animate(markerSizeController);
+    markerTextFade =
+        Tween<double>(begin: 0, end: 1).animate(markerTextFadeController);
+    cardScaleValue = Tween<double>(begin: 0, end: 1).animate(cardController);
+    elementsScaleValue =
+        Tween<double>(begin: 0, end: 1).animate(elementsScaleController);
+  }
+
+  void dispose() {
+    markerScaleController.dispose();
+    markerSizeController.dispose();
+    markerTextFadeController.dispose();
+    cardController.dispose();
+    elementsScaleController.dispose();
   }
 }
