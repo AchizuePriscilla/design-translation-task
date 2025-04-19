@@ -24,24 +24,44 @@ final List<LatLng> markerPoints = [
   LatLng(9.044754, 7.484102),
 ];
 
-class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
+class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   late AnimationController _cardController;
+  late AnimationController _innerSplashController;
+  late AnimationController _outerSplashController;
   late Animation<double> _cardScaleValue;
+  late Animation<double> _innerSplashRadiusValue;
+  late Animation<double> _outerSplashRadiusValue;
   @override
   void initState() {
     super.initState();
     _cardController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 800),
+      duration: Duration(milliseconds: 500),
+    );
+    _innerSplashController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 200),
+    );
+    _outerSplashController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 100),
     );
     _cardScaleValue = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _cardController, curve: Curves.easeInOut),
+    );
+    _innerSplashRadiusValue = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _innerSplashController, curve: Curves.easeInOut),
+    );
+    _outerSplashRadiusValue = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _outerSplashController, curve: Curves.easeInOut),
     );
   }
 
   @override
   void dispose() {
     _cardController.dispose();
+    _innerSplashController.dispose();
+    _outerSplashController.dispose();
     super.dispose();
   }
 
@@ -140,40 +160,82 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   Column(
                     children: [
                       InkWell(
-                        onTap: () {
+                        onTap: () async {
+                          await _innerSplashController.forward();
+                          _outerSplashController.forward();
                           _cardController.forward();
+                          _innerSplashController.reverse();
+                          _outerSplashController.reset();
                         },
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(30.r),
-                          child: Container(
-                            width: 50.h,
-                            height: 50.h,
-                            decoration: BoxDecoration(
-                                color: Palette.white.withValues(alpha: .7),
-                                shape: BoxShape.circle),
-                            child: BackdropFilter(
-                                filter:
-                                    ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                                child: Icon(Icons.filter_list,
-                                    size: 20.sp, color: Palette.white)),
-                          ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            BlurredButtonWidget(),
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                AnimatedBuilder(
+                                    animation: _outerSplashRadiusValue,
+                                    builder: (context, child) {
+                                      return Visibility(
+                                        visible:
+                                            _outerSplashRadiusValue.value < 1,
+                                        child: Container(
+                                          width: 50.h -
+                                              (15.h *
+                                                  _outerSplashRadiusValue
+                                                      .value),
+                                          height: 50.h -
+                                              (15.h *
+                                                  _outerSplashRadiusValue
+                                                      .value),
+                                          decoration: BoxDecoration(
+                                            color: Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(30.r),
+                                            border: Border.all(
+                                                color: Palette.white),
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                                AnimatedBuilder(
+                                    animation: _innerSplashRadiusValue,
+                                    builder: (context, child) {
+                                      return Visibility(
+                                        visible:
+                                            _innerSplashRadiusValue.value < 1,
+                                        child: Container(
+                                          width: 31.h +
+                                              (20.h *
+                                                  _innerSplashRadiusValue
+                                                      .value),
+                                          height: 31.h +
+                                              (20.h *
+                                                  _innerSplashRadiusValue
+                                                      .value),
+                                          decoration: BoxDecoration(
+                                            color: Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(30.r),
+                                            border: Border.all(
+                                              color: Palette.white,
+                                              width: 5.h -
+                                                  (4.h *
+                                                      _innerSplashRadiusValue
+                                                          .value),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                       CustomSpacer(),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(30.r),
-                        child: Container(
-                          width: 50.h,
-                          height: 50.h,
-                          decoration: BoxDecoration(
-                              color: Palette.white.withValues(alpha: .7),
-                              shape: BoxShape.circle),
-                          child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                              child: Icon(Icons.filter_list,
-                                  size: 20.sp, color: Palette.white)),
-                        ),
-                      ),
+                      BlurredButtonWidget()
                     ],
                   ),
                   const Spacer(),
@@ -205,9 +267,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   ),
                 ],
               )),
-          AnimatedPositioned(
-              duration: Duration(milliseconds: 300),
-              curve: Curves.easeOut,
+          Positioned(
               bottom: 155.h,
               left: 20.w,
               child: GestureDetector(
@@ -220,42 +280,64 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                     return Transform.scale(
                       scale: _cardScaleValue.value,
                       alignment: Alignment.bottomLeft,
-                      child: child,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 10.w, vertical: 10.h),
+                        decoration: BoxDecoration(
+                          color: Palette.white,
+                          borderRadius: BorderRadius.circular(20.r),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CardRow(
+                              iconData: Icons.beenhere_outlined,
+                              title: "Cozy areas",
+                            ),
+                            CardRow(
+                              iconData: Icons.wallet_outlined,
+                              color: Palette.primary,
+                              title: "Price",
+                            ),
+                            CardRow(
+                              iconData: Icons.location_on,
+                              title: "Infrastructure",
+                            ),
+                            CardRow(
+                              iconData: Icons.layers_outlined,
+                              title: "Without any layer",
+                            )
+                          ],
+                        ),
+                      ),
                     );
                   },
-                  child: Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
-                    decoration: BoxDecoration(
-                      color: Palette.white,
-                      borderRadius: BorderRadius.circular(20.r),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CardRow(
-                          iconData: Icons.beenhere_outlined,
-                          title: "Cozy areas",
-                        ),
-                        CardRow(
-                          iconData: Icons.wallet_outlined,
-                          color: Palette.primary,
-                          title: "Price",
-                        ),
-                        CardRow(
-                          iconData: Icons.location_on,
-                          title: "Infrastructure",
-                        ),
-                        CardRow(
-                          iconData: Icons.layers_outlined,
-                          title: "Without any layer",
-                        )
-                      ],
-                    ),
-                  ),
                 ),
               )),
         ]);
+  }
+}
+
+class BlurredButtonWidget extends StatelessWidget {
+  const BlurredButtonWidget({
+    super.key,
+    this.child,
+  });
+  final Widget? child;
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(30.r),
+      child: Container(
+        width: 50.h,
+        height: 50.h,
+        decoration: BoxDecoration(
+            color: Palette.white.withValues(alpha: .7), shape: BoxShape.circle),
+        child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            child: Icon(Icons.filter_list, size: 20.sp, color: Palette.white)),
+      ),
+    );
   }
 }
 
