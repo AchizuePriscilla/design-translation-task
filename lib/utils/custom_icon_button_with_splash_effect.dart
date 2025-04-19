@@ -1,5 +1,4 @@
 import 'package:design_task/utils/palette.dart';
-import 'package:design_task/views/map_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -7,9 +6,11 @@ class CustomIconButtonWithSplashEffect extends StatefulWidget {
   const CustomIconButtonWithSplashEffect({
     super.key,
     required this.onTap,
+    required this.child,
   });
 
   final Function() onTap;
+  final Widget child;
   @override
   State<CustomIconButtonWithSplashEffect> createState() =>
       _CustomIconButtonWithSplashEffectState();
@@ -63,7 +64,7 @@ class _CustomIconButtonWithSplashEffectState
       child: Stack(
         alignment: Alignment.center,
         children: [
-          BlurredButtonWidget(),
+          widget.child,
           Stack(
             alignment: Alignment.center,
             children: [

@@ -198,6 +198,7 @@ class BottomButtons extends StatelessWidget {
                   scale: animations.elementsScaleValue,
                   alignment: Alignment.center,
                   child: CustomIconButtonWithSplashEffect(
+                    child: BlurredButtonWidget(),
                     onTap: () {
                       animations.cardController.forward();
                       animations.markerSizeController.reverse();
