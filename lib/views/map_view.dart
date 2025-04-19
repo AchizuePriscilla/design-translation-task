@@ -50,6 +50,12 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
     "8,5mn P",
   ];
   @override
+  void dispose() {
+    animations.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FlutterMap(
         options: MapOptions(
@@ -198,11 +204,11 @@ class BottomButtons extends StatelessWidget {
                   scale: animations.elementsScaleValue,
                   alignment: Alignment.center,
                   child: CustomIconButtonWithSplashEffect(
-                    child: BlurredButtonWidget(),
                     onTap: () {
                       animations.cardController.forward();
                       animations.markerSizeController.reverse();
                     },
+                    child: BlurredButtonWidget(),
                   ),
                 ),
                 CustomSpacer(),
