@@ -52,7 +52,7 @@ class _RealEstateAppState extends State<RealEstateApp>
     );
     _pageFade =
         Tween<double>(begin: 1.0, end: 0.0).animate(_pageFadeController);
-    _bottomBarSlide = Tween<Offset>(begin: Offset(0, 100), end: Offset(0, -30))
+    _bottomBarSlide = Tween<Offset>(begin: Offset(0, 100), end: Offset(0, -20))
         .animate(_bottomBarSlideController);
     Future.microtask(() => animateBottomBar());
   }

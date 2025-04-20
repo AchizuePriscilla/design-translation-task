@@ -59,9 +59,9 @@ class _MapPageState extends State<MapPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return FlutterMap(
         options: MapOptions(
-          initialCenter: LatLng(9.047473, 7.478592),
-          initialZoom: 15,
-        ),
+            initialCenter: LatLng(9.047473, 7.478592),
+            initialZoom: 15,
+            backgroundColor: Colors.black),
         children: [
           TileLayer(
             urlTemplate:

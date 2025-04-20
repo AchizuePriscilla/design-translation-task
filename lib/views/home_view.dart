@@ -24,7 +24,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
     Future.microtask(() => _animateElements());
   }
 
-  double _bottomSheetMinHeight = 0.h;
+  double _bottomSheetMinHeight = 0;
   Future<void> _animateElements() async {
     await _homeViewAnimations.searchRowController.forward();
     await Future.delayed(Duration(milliseconds: 100));
@@ -34,13 +34,13 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
     await _homeViewAnimations.numberOfOffersController.forward();
     await _draggableScrollableController
         .animateTo(
-      0.6.h,
+      0.66,
       duration: const Duration(milliseconds: 600),
       curve: Curves.easeInOut,
     )
         .then((value) {
       setState(() {
-        _bottomSheetMinHeight = 0.3.h;
+        _bottomSheetMinHeight = 0.3;
       });
     });
     await _homeViewAnimations.sliderScaleController.forward();
@@ -83,45 +83,9 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                 CustomSpacer(
                   flex: 15,
                 ),
-                Row(
-                  children: [
-                    AnimatedBuilder(
-                        animation: _homeViewAnimations.searchRow,
-                        builder: (context, child) {
-                          return SizedBox(
-                            width: _homeViewAnimations.searchRow.value *
-                                (MediaQuery.of(context).size.width * 0.5),
-                            height: 40.h,
-                            child: SearchTextField(),
-                          );
-                        }),
-                    const Spacer(),
-                    ScaleTransition(
-                      scale: _homeViewAnimations.searchRow,
-                      child: Container(
-                        width: 48.w,
-                        height: 48.h,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Palette.primaryDark,
-                              Palette.primary,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                          image: DecorationImage(
-                            image: AssetImage('assets/images/me.png'),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    )
-                  ],
-                ),
+                SearchRow(homeViewAnimations: _homeViewAnimations),
                 CustomSpacer(
-                  flex: 7,
+                  flex: 9,
                 ),
                 FadeTransition(
                   opacity: _homeViewAnimations.nameTextFade,
@@ -135,12 +99,11 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                 ),
                 ClipRRect(
                   child: AnimatedBuilder(
-                    animation: _homeViewAnimations.firstLineTextFade,
+                    animation: _homeViewAnimations.textFade,
                     builder: (context, child) {
                       return Align(
                         alignment: Alignment.topCenter,
-                        heightFactor:
-                            _homeViewAnimations.firstLineTextFade.value,
+                        heightFactor: _homeViewAnimations.textFade.value,
                         child: Text(
                           "let's select your perfect place",
                           style: TextStyle(
@@ -154,61 +117,14 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                 CustomSpacer(
                   flex: 7,
                 ),
-                AnimatedBuilder(
-                    animation: _homeViewAnimations.numberOfOffers,
-                    builder: (context, child) {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          ScaleTransition(
-                            scale: _homeViewAnimations.offersRow,
-                            child: Container(
-                              width: MediaQuery.of(context).size.width * 0.43,
-                              height: MediaQuery.of(context).size.width * 0.43,
-                              decoration: BoxDecoration(
-                                color: Palette.primary,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(vertical: 15.h),
-                                child: OffersColumn(
-                                  title: "BUY",
-                                  numberOfOffers:
-                                      "${(1034 * _homeViewAnimations.numberOfOffers.value).round()}",
-                                  textColor: Palette.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                          ScaleTransition(
-                            scale: _homeViewAnimations.offersRow,
-                            child: Container(
-                              width: MediaQuery.of(context).size.width * 0.43,
-                              height: MediaQuery.of(context).size.width * 0.43,
-                              decoration: BoxDecoration(
-                                  color: Palette.white,
-                                  borderRadius: BorderRadius.circular(30.r)),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(vertical: 15.h),
-                                child: OffersColumn(
-                                  title: "RENT",
-                                  numberOfOffers:
-                                      "${(2212 * _homeViewAnimations.numberOfOffers.value).round()}",
-                                  textColor: Palette.grey,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    })
+                OffersRow(homeViewAnimations: _homeViewAnimations)
               ],
             ),
           ),
           DraggableScrollableSheet(
               initialChildSize: _bottomSheetMinHeight,
               minChildSize: _bottomSheetMinHeight,
-              maxChildSize: 0.6.h,
+              maxChildSize: 0.66,
               expand: false,
               controller: _draggableScrollableController,
               shouldCloseOnMinExtent: false,
@@ -216,7 +132,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                 return SingleChildScrollView(
                   controller: controller,
                   child: Container(
-                    height: MediaQuery.of(context).size.height * 0.67,
+                    height: MediaQuery.of(context).size.height * 0.65,
                     padding:
                         EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
                     decoration: BoxDecoration(
@@ -269,9 +185,6 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                             ],
                           ),
                         ),
-                        CustomSpacer(
-                          flex: 3,
-                        ),
                       ],
                     ),
                   ),
@@ -280,6 +193,117 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
+}
+
+class SearchRow extends StatelessWidget {
+  const SearchRow({
+    super.key,
+    required HomeViewAnimations homeViewAnimations,
+  }) : _homeViewAnimations = homeViewAnimations;
+
+  final HomeViewAnimations _homeViewAnimations;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        AnimatedBuilder(
+            animation: _homeViewAnimations.searchRow,
+            builder: (context, child) {
+              return SizedBox(
+                width: _homeViewAnimations.searchRow.value *
+                    (MediaQuery.of(context).size.width * 0.5),
+                height: 40.h,
+                child: SearchTextField(),
+              );
+            }),
+        const Spacer(),
+        ScaleTransition(
+          scale: _homeViewAnimations.searchRow,
+          child: Container(
+            width: 48.w,
+            height: 48.h,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Palette.primaryDark,
+                  Palette.primary,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+              image: DecorationImage(
+                image: AssetImage('assets/images/me.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        )
+      ],
+    );
+  }
+}
+
+class OffersRow extends StatelessWidget {
+  const OffersRow({
+    super.key,
+    required HomeViewAnimations homeViewAnimations,
+  }) : _homeViewAnimations = homeViewAnimations;
+
+  final HomeViewAnimations _homeViewAnimations;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+        animation: _homeViewAnimations.numberOfOffers,
+        builder: (context, child) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ScaleTransition(
+                scale: _homeViewAnimations.offersRow,
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.43,
+                  height: MediaQuery.of(context).size.width * 0.43,
+                  decoration: BoxDecoration(
+                    color: Palette.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 15.h),
+                    child: OffersColumn(
+                      title: "BUY",
+                      numberOfOffers:
+                          "${(1034 * _homeViewAnimations.numberOfOffers.value).round()}",
+                      textColor: Palette.white,
+                    ),
+                  ),
+                ),
+              ),
+              ScaleTransition(
+                scale: _homeViewAnimations.offersRow,
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.43,
+                  height: MediaQuery.of(context).size.width * 0.43,
+                  decoration: BoxDecoration(
+                      color: Palette.white,
+                      borderRadius: BorderRadius.circular(30.r)),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 15.h),
+                    child: OffersColumn(
+                      title: "RENT",
+                      numberOfOffers:
+                          "${(2212 * _homeViewAnimations.numberOfOffers.value).round()}",
+                      textColor: Palette.grey,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        });
   }
 }
 
@@ -491,7 +515,7 @@ class HomeViewAnimations {
   late final Animation<double> pageFade;
   late final Animation<double> searchRow;
   late final Animation<double> nameTextFade;
-  late final Animation<double> firstLineTextFade;
+  late final Animation<double> textFade;
   late final Animation<double> offersRow;
   late final Animation<double> numberOfOffers;
   late final Animation<double> sliderScale;
@@ -522,8 +546,7 @@ class HomeViewAnimations {
     searchRow = Tween<double>(begin: 0, end: 1).animate(searchRowController);
     nameTextFade =
         Tween<double>(begin: 0, end: 1).animate(nameTextFadeController);
-    firstLineTextFade =
-        Tween<double>(begin: 0, end: 1).animate(textFadeController);
+    textFade = Tween<double>(begin: 0, end: 1).animate(textFadeController);
     offersRow = Tween<double>(begin: 0, end: 1).animate(offersRowController);
     numberOfOffers =
         Tween<double>(begin: 0, end: 1).animate(numberOfOffersController);
