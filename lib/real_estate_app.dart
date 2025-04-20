@@ -13,10 +13,12 @@ class RealEstateApp extends StatefulWidget {
 }
 
 class _RealEstateAppState extends State<RealEstateApp>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   int _selectedPage = 2;
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
+  late AnimationController _pageFadeController;
+  late AnimationController _bottomBarSlideController;
+  late Animation<double> _pageFade;
+  late Animation<Offset> _bottomBarSlide;
   final List<IconData> _icons = [
     Icons.search_rounded,
     Icons.chat_bubble_rounded,
@@ -40,18 +42,30 @@ class _RealEstateAppState extends State<RealEstateApp>
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
+    _pageFadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-    _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    _bottomBarSlideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
     );
+    _pageFade =
+        Tween<double>(begin: 1.0, end: 0.0).animate(_pageFadeController);
+    _bottomBarSlide = Tween<Offset>(begin: Offset(0, 100), end: Offset(0, -30))
+        .animate(_bottomBarSlideController);
+    Future.microtask(() => animateBottomBar());
+  }
+
+  Future<void> animateBottomBar() async {
+    await Future.delayed(const Duration(milliseconds: 7300));
+    _bottomBarSlideController.forward();
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
+    _pageFadeController.dispose();
+    _bottomBarSlideController.dispose();
     super.dispose();
   }
 
@@ -69,36 +83,41 @@ class _RealEstateAppState extends State<RealEstateApp>
             );
           },
         ),
-        Positioned(
-          bottom: 30.h,
-          child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: 5.w,
-                vertical: 7.h,
-              ),
-              decoration: BoxDecoration(
-                color: Palette.black,
-                borderRadius: BorderRadius.circular(30.r),
-              ),
-              child: Row(
-                  children: List.generate(5, (index) {
-                return BottomNavigationItem(
-                  iconData: _icons[index],
-                  isSelected: _selectedPage == index,
-                  fadeController: _fadeController,
-                  fadeAnimation: _fadeAnimation,
-                  onTap: () async {
-                    if (_selectedPage != index) {
-                      await _fadeController.forward();
-                    }
-                    setState(() {
-                      _selectedPage = index;
-                    });
-                    _fadeController.reverse();
-                  },
-                );
-              }))),
-        ),
+        AnimatedBuilder(
+            animation: _bottomBarSlide,
+            builder: (context, child) {
+              return Transform.translate(
+                offset: _bottomBarSlide.value,
+                child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 5.w,
+                      vertical: 7.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Palette.black,
+                      borderRadius: BorderRadius.circular(30.r),
+                    ),
+                    child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(5, (index) {
+                          return BottomNavigationItem(
+                            iconData: _icons[index],
+                            isSelected: _selectedPage == index,
+                            fadeController: _pageFadeController,
+                            fadeAnimation: _pageFade,
+                            onTap: () async {
+                              if (_selectedPage != index) {
+                                await _pageFadeController.forward();
+                              }
+                              setState(() {
+                                _selectedPage = index;
+                              });
+                              _pageFadeController.reverse();
+                            },
+                          );
+                        }))),
+              );
+            }),
       ]),
     );
   }

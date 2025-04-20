@@ -1,14 +1,60 @@
 import 'dart:ui';
-
 import 'package:design_task/utils/custom_spacer.dart';
 import 'package:design_task/utils/palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class HomeView extends StatelessWidget {
+class HomeView extends StatefulWidget {
   const HomeView({
     super.key,
   });
+
+  @override
+  State<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
+  late final HomeViewAnimations _homeViewAnimations;
+  final DraggableScrollableController _draggableScrollableController =
+      DraggableScrollableController();
+  @override
+  void initState() {
+    super.initState();
+    _homeViewAnimations = HomeViewAnimations(this);
+    Future.microtask(() => _animateElements());
+  }
+
+  double _bottomSheetMinHeight = 0.h;
+  Future<void> _animateElements() async {
+    await _homeViewAnimations.searchRowController.forward();
+    await Future.delayed(Duration(milliseconds: 100));
+    await _homeViewAnimations.nameTextFadeController.forward();
+    await _homeViewAnimations.textFadeController.forward();
+    _homeViewAnimations.offersRowController.forward();
+    await _homeViewAnimations.numberOfOffersController.forward();
+    await _draggableScrollableController
+        .animateTo(
+      0.6.h,
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeInOut,
+    )
+        .then((value) {
+      setState(() {
+        _bottomSheetMinHeight = 0.3.h;
+      });
+    });
+    await _homeViewAnimations.sliderScaleController.forward();
+    await Future.delayed(
+      const Duration(milliseconds: 300),
+    );
+    _homeViewAnimations.sliderSizeAndAddressFadeController.forward();
+  }
+
+  @override
+  void dispose() {
+    _homeViewAnimations.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +67,7 @@ class HomeView extends StatelessWidget {
             Color(0xffFADDBC),
             Color(0xffF8F8F8),
           ],
-          stops: [0.0, 0.2, 0.5, 1.0],
+          stops: [0.0, 0.3, 0.5, 1.0],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -39,28 +85,36 @@ class HomeView extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.5,
-                      height: 40.h,
-                      child: SearchTextField(),
-                    ),
+                    AnimatedBuilder(
+                        animation: _homeViewAnimations.searchRow,
+                        builder: (context, child) {
+                          return SizedBox(
+                            width: _homeViewAnimations.searchRow.value *
+                                (MediaQuery.of(context).size.width * 0.5),
+                            height: 40.h,
+                            child: SearchTextField(),
+                          );
+                        }),
                     const Spacer(),
-                    Container(
-                      width: 48.w,
-                      height: 48.h,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Palette.primaryDark,
-                            Palette.primary,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: AssetImage('assets/images/me.png'),
-                          fit: BoxFit.cover,
+                    ScaleTransition(
+                      scale: _homeViewAnimations.searchRow,
+                      child: Container(
+                        width: 48.w,
+                        height: 48.h,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Palette.primaryDark,
+                              Palette.primary,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                          image: DecorationImage(
+                            image: AssetImage('assets/images/me.png'),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     )
@@ -69,66 +123,94 @@ class HomeView extends StatelessWidget {
                 CustomSpacer(
                   flex: 7,
                 ),
-                Text(
-                  "Hi, Priscilla",
-                  style: TextStyle(
-                    fontSize: 22.sp,
-                    color: Palette.grey,
+                FadeTransition(
+                  opacity: _homeViewAnimations.nameTextFade,
+                  child: Text(
+                    "Hi, Priscilla",
+                    style: TextStyle(
+                      fontSize: 22.sp,
+                      color: Palette.grey,
+                    ),
                   ),
                 ),
-                Text(
-                  "let's select your perfect place",
-                  style: TextStyle(
-                    fontSize: 33.sp,
+                ClipRRect(
+                  child: AnimatedBuilder(
+                    animation: _homeViewAnimations.firstLineTextFade,
+                    builder: (context, child) {
+                      return Align(
+                        alignment: Alignment.topCenter,
+                        heightFactor:
+                            _homeViewAnimations.firstLineTextFade.value,
+                        child: Text(
+                          "let's select your perfect place",
+                          style: TextStyle(
+                            fontSize: 33.sp,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 CustomSpacer(
                   flex: 7,
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      width: MediaQuery.of(context).size.width * 0.43,
-                      height: MediaQuery.of(context).size.width * 0.43,
-                      decoration: BoxDecoration(
-                        color: Palette.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 15.h),
-                        child: OffersColumn(
-                          title: "BUY",
-                          numberOfOffers: "1034",
-                          textColor: Palette.white,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: MediaQuery.of(context).size.width * 0.43,
-                      height: MediaQuery.of(context).size.width * 0.43,
-                      decoration: BoxDecoration(
-                          color: Palette.white,
-                          borderRadius: BorderRadius.circular(30.r)),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 15.h),
-                        child: OffersColumn(
-                          title: "RENT",
-                          numberOfOffers: "1034",
-                          textColor: Palette.grey,
-                        ),
-                      ),
-                    ),
-                  ],
-                )
+                AnimatedBuilder(
+                    animation: _homeViewAnimations.numberOfOffers,
+                    builder: (context, child) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          ScaleTransition(
+                            scale: _homeViewAnimations.offersRow,
+                            child: Container(
+                              width: MediaQuery.of(context).size.width * 0.43,
+                              height: MediaQuery.of(context).size.width * 0.43,
+                              decoration: BoxDecoration(
+                                color: Palette.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 15.h),
+                                child: OffersColumn(
+                                  title: "BUY",
+                                  numberOfOffers:
+                                      "${(1034 * _homeViewAnimations.numberOfOffers.value).round()}",
+                                  textColor: Palette.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          ScaleTransition(
+                            scale: _homeViewAnimations.offersRow,
+                            child: Container(
+                              width: MediaQuery.of(context).size.width * 0.43,
+                              height: MediaQuery.of(context).size.width * 0.43,
+                              decoration: BoxDecoration(
+                                  color: Palette.white,
+                                  borderRadius: BorderRadius.circular(30.r)),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 15.h),
+                                child: OffersColumn(
+                                  title: "RENT",
+                                  numberOfOffers:
+                                      "${(2212 * _homeViewAnimations.numberOfOffers.value).round()}",
+                                  textColor: Palette.grey,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    })
               ],
             ),
           ),
           DraggableScrollableSheet(
-              initialChildSize: 0.67,
-              minChildSize: 0.37,
-              maxChildSize: 0.67,
+              initialChildSize: _bottomSheetMinHeight,
+              minChildSize: _bottomSheetMinHeight,
+              maxChildSize: 0.6.h,
               expand: false,
+              controller: _draggableScrollableController,
               shouldCloseOnMinExtent: false,
               builder: (context, controller) {
                 return SingleChildScrollView(
@@ -150,6 +232,8 @@ class HomeView extends StatelessWidget {
                           imagePath: "one",
                           isFirstImage: true,
                           address: "Gladkova St., 25",
+                          animations: _homeViewAnimations,
+                          slideAnimationSpeedFactor: 3,
                         ),
                         CustomSpacer(
                           flex: 3,
@@ -158,7 +242,10 @@ class HomeView extends StatelessWidget {
                           child: Row(
                             children: [
                               HouseImageContainer(
-                                  imagePath: "two", address: "Gubina St., 11"),
+                                  imagePath: "two",
+                                  address: "Gubina St., 11",
+                                  slideAnimationSpeedFactor: 0,
+                                  animations: _homeViewAnimations),
                               CustomSpacer(
                                 horizontal: true,
                               ),
@@ -167,11 +254,15 @@ class HomeView extends StatelessWidget {
                                   children: [
                                     HouseImageContainer(
                                         imagePath: "three",
-                                        address: "Trefoleva St., 43"),
+                                        address: "Trefoleva St., 43",
+                                        slideAnimationSpeedFactor: 0.3,
+                                        animations: _homeViewAnimations),
                                     CustomSpacer(),
                                     HouseImageContainer(
                                         imagePath: "four",
-                                        address: "Sedova St., 22"),
+                                        address: "Sedova St., 22",
+                                        slideAnimationSpeedFactor: 0.1,
+                                        animations: _homeViewAnimations),
                                   ],
                                 ),
                               ),
@@ -198,10 +289,14 @@ class HouseImageContainer extends StatelessWidget {
     this.isFirstImage = false,
     required this.imagePath,
     required this.address,
+    required this.animations,
+    required this.slideAnimationSpeedFactor,
   });
   final String imagePath;
   final String address;
   final bool isFirstImage;
+  final HomeViewAnimations animations;
+  final double slideAnimationSpeedFactor;
   @override
   Widget build(BuildContext context) {
     return Expanded(
@@ -216,58 +311,88 @@ class HouseImageContainer extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            bottom: !isFirstImage ? 7.h : 10.h,
-            left: 10.w,
-            right: 10.w,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(30.r),
-              child: Stack(
-                children: [
-                  Container(
-                    padding: EdgeInsets.fromLTRB(8.w, 3.h, 2.w, 3.h),
-                    width: MediaQuery.of(context).size.width,
-                    decoration: BoxDecoration(
-                      color: Palette.white.withValues(alpha: .5),
-                      borderRadius: BorderRadius.circular(30.r),
-                    ),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                      child: Stack(
-                        alignment: isFirstImage
-                            ? Alignment.center
-                            : Alignment.centerLeft,
-                        children: [
-                          Text(
-                            address,
-                            style: TextStyle(
-                              overflow: TextOverflow.ellipsis,
+          AnimatedBuilder(
+              animation: animations.sliderSize,
+              builder: (context, child) {
+                return Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                    padding:
+                        EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
+                    child: ScaleTransition(
+                      scale: animations.sliderScale,
+                      alignment: Alignment.centerLeft,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(30.r),
+                        child: Container(
+                          padding: EdgeInsets.fromLTRB(
+                            animations.sliderSize.value == 0.09 ? 1.h : 8.w,
+                            3.h,
+                            1.w,
+                            3.h,
+                          ),
+                          width: animations.sliderSize.value != 0.09
+                              ? MediaQuery.of(context).size.width *
+                                  (animations.sliderSize.value *
+                                      (1 +
+                                          (slideAnimationSpeedFactor - 1) *
+                                              0.5))
+                              : !isFirstImage
+                                  ? 30.w
+                                  : 40.w,
+                          height: !isFirstImage ? 30.w : 40.h,
+                          decoration: BoxDecoration(
+                            color: Palette.white.withValues(alpha: .5),
+                            borderRadius: BorderRadius.circular(30.r),
+                          ),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                            child: Stack(
+                              alignment: isFirstImage
+                                  ? Alignment.center
+                                  : Alignment.centerLeft,
+                              children: [
+                                if (animations.sliderSize.value != 0.09)
+                                  FadeTransition(
+                                    opacity: animations.addressFade,
+                                    child: Text(
+                                      address,
+                                      style: TextStyle(
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                ScaleTransition(
+                                  scale: animations.sliderScale,
+                                  child: Align(
+                                    alignment:
+                                        animations.sliderSize.value == 0.09
+                                            ? Alignment.center
+                                            : Alignment.centerRight,
+                                    child: Container(
+                                      width: !isFirstImage ? 30.w : 40.w,
+                                      height: !isFirstImage ? 30.w : 40.h,
+                                      decoration: BoxDecoration(
+                                        color: Palette.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.arrow_forward_ios_rounded,
+                                        size: !isFirstImage ? 8.sp : 11.sp,
+                                        color: Palette.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Container(
-                              width: !isFirstImage ? 30.w : 40.w,
-                              height: !isFirstImage ? 30.w : 40.h,
-                              decoration: BoxDecoration(
-                                color: Palette.white,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                size: 15.sp,
-                                color: Palette.grey,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          )
+                );
+              })
         ],
       ),
     );
@@ -349,5 +474,90 @@ class SearchTextField extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class HomeViewAnimations {
+  late AnimationController pageFadeController;
+  final AnimationController searchRowController;
+  final AnimationController nameTextFadeController;
+  final AnimationController textFadeController;
+  final AnimationController offersRowController;
+  final AnimationController numberOfOffersController;
+  final AnimationController sliderScaleController;
+  final AnimationController sliderSizeAndAddressFadeController;
+  final AnimationController bottomNavBarController;
+
+  late final Animation<double> pageFade;
+  late final Animation<double> searchRow;
+  late final Animation<double> nameTextFade;
+  late final Animation<double> firstLineTextFade;
+  late final Animation<double> offersRow;
+  late final Animation<double> numberOfOffers;
+  late final Animation<double> sliderScale;
+  late final Animation<double> sliderSize;
+  late final Animation<double> addressFade;
+  late final Animation<double> bottomNavBar;
+
+  HomeViewAnimations(TickerProvider vsync)
+      : pageFadeController = AnimationController(
+            vsync: vsync, duration: Duration(milliseconds: 400)),
+        searchRowController = AnimationController(
+            vsync: vsync, duration: Duration(milliseconds: 600)),
+        nameTextFadeController = AnimationController(
+            vsync: vsync, duration: Duration(milliseconds: 800)),
+        textFadeController = AnimationController(
+            vsync: vsync, duration: Duration(milliseconds: 800)),
+        offersRowController = AnimationController(
+            vsync: vsync, duration: Duration(milliseconds: 500)),
+        numberOfOffersController =
+            AnimationController(vsync: vsync, duration: Duration(seconds: 1)),
+        sliderScaleController = AnimationController(
+            vsync: vsync, duration: Duration(milliseconds: 800)),
+        sliderSizeAndAddressFadeController =
+            AnimationController(vsync: vsync, duration: Duration(seconds: 2)),
+        bottomNavBarController = AnimationController(
+            vsync: vsync, duration: Duration(milliseconds: 800)) {
+    pageFade = Tween<double>(begin: 1, end: 0).animate(pageFadeController);
+    searchRow = Tween<double>(begin: 0, end: 1).animate(searchRowController);
+    nameTextFade =
+        Tween<double>(begin: 0, end: 1).animate(nameTextFadeController);
+    firstLineTextFade =
+        Tween<double>(begin: 0, end: 1).animate(textFadeController);
+    offersRow = Tween<double>(begin: 0, end: 1).animate(offersRowController);
+    numberOfOffers =
+        Tween<double>(begin: 0, end: 1).animate(numberOfOffersController);
+    sliderScale =
+        Tween<double>(begin: 0, end: 1).animate(sliderScaleController);
+    sliderSize = Tween<double>(begin: .09, end: 1).animate(
+      CurvedAnimation(
+        parent: sliderSizeAndAddressFadeController,
+        curve: Interval(0.09, 1, curve: Curves.easeOut),
+      ),
+    );
+    addressFade = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: sliderSizeAndAddressFadeController,
+        curve: Interval(0.5, 1, curve: Curves.easeOut),
+      ),
+    );
+    bottomNavBar = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: bottomNavBarController,
+        curve: Curves.easeOut,
+      ),
+    );
+  }
+
+  void dispose() {
+    searchRowController.dispose();
+    textFadeController.dispose();
+    nameTextFadeController.dispose();
+    offersRowController.dispose();
+    numberOfOffersController.dispose();
+    sliderScaleController.dispose();
+    sliderSizeAndAddressFadeController.dispose();
+    pageFadeController.dispose();
+    bottomNavBarController.dispose();
   }
 }
