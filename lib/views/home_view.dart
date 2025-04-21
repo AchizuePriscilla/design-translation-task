@@ -639,7 +639,8 @@ class HomeViewAnimations {
         numberOfOffersController =
             AnimationController(vsync: vsync, duration: Duration(seconds: 1)) {
     pageFade = Tween<double>(begin: 1, end: 0).animate(pageFadeController);
-    searchRow = Tween<double>(begin: 0, end: 1).animate(searchRowController);
+    searchRow = Tween<double>(begin: 0, end: 1).animate(
+        CurvedAnimation(curve: Curves.ease, parent: searchRowController));
     nameTextFade =
         Tween<double>(begin: 0, end: 1).animate(nameTextFadeController);
     textFade = Tween<double>(begin: 0, end: 1).animate(textFadeController);
