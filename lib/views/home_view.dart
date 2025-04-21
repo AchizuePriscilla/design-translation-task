@@ -28,24 +28,27 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
 
   double _bottomSheetMinHeight = 0;
   Future<void> _animateElements() async {
-    await _homeViewAnimations.searchRowController.forward();
-    await Future.delayed(Duration(milliseconds: 100));
+    await Future.delayed(Duration(milliseconds: 500));
     if (mounted) {
-      await _homeViewAnimations.nameTextFadeController.forward();
-      await _homeViewAnimations.textFadeController.forward();
-      _homeViewAnimations.offersRowController.forward();
-      await _homeViewAnimations.numberOfOffersController.forward();
-      await _draggableScrollableController
-          .animateTo(
-        0.66,
-        duration: const Duration(milliseconds: 600),
-        curve: Curves.fastOutSlowIn,
-      )
-          .then((value) {
-        setState(() {
-          _bottomSheetMinHeight = 0.3;
+      await _homeViewAnimations.searchRowController.forward();
+      await Future.delayed(Duration(milliseconds: 100));
+      if (mounted) {
+        await _homeViewAnimations.nameTextFadeController.forward();
+        await _homeViewAnimations.textFadeController.forward();
+        _homeViewAnimations.offersRowController.forward();
+        await _homeViewAnimations.numberOfOffersController.forward();
+        await _draggableScrollableController
+            .animateTo(
+          0.66,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.fastOutSlowIn,
+        )
+            .then((value) {
+          setState(() {
+            _bottomSheetMinHeight = 0.3;
+          });
         });
-      });
+      }
     }
   }
 
@@ -233,16 +236,7 @@ class SearchRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        AnimatedBuilder(
-            animation: _homeViewAnimations.searchRow,
-            builder: (context, child) {
-              return SizedBox(
-                width: _homeViewAnimations.searchRow.value *
-                    (MediaQuery.of(context).size.width * 0.5),
-                height: 45.h,
-                child: SearchTextField(),
-              );
-            }),
+        SearchTextField(animations: _homeViewAnimations),
         const Spacer(),
         ScaleTransition(
           scale: _homeViewAnimations.searchRow,
@@ -367,7 +361,7 @@ class _HouseImageContainerState extends State<HouseImageContainer>
     _widthMultiplier =
         (1 + (widget.slideAnimationSpeedFactor.clamp(0.1, 10.0) - 1) * 0.5);
     _sliderSizeAndAddressFadeController =
-        AnimationController(vsync: this, duration: Duration(seconds: 1));
+        AnimationController(vsync: this, duration: Duration(seconds: 2));
     _sliderScaleController = AnimationController(
         vsync: this,
         duration:
@@ -399,7 +393,7 @@ class _HouseImageContainerState extends State<HouseImageContainer>
   }
 
   Future<void> animate() async {
-    await Future.delayed(Duration(milliseconds: 3800));
+    await Future.delayed(Duration(milliseconds: 4300));
     if (mounted) {
       await _sliderScaleController.forward();
       _sliderSizeAndAddressFadeController.forward();
@@ -557,55 +551,74 @@ class OffersColumn extends StatelessWidget {
 }
 
 class SearchTextField extends StatelessWidget {
-  const SearchTextField({
-    super.key,
-  });
-
+  const SearchTextField({super.key, required this.animations});
+  final HomeViewAnimations animations;
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      textAlignVertical: TextAlignVertical(y: 1),
-      style: TextStyle(
-        fontSize: 14.sp,
-        color: Palette.grey,
-      ),
-      decoration: InputDecoration(
-        hintText: 'Saint Petersburg',
-        prefixIcon: Padding(
-          padding: EdgeInsets.only(left: 15.w, right: 4.w),
-          child: Icon(
-            MingCute.location_fill,
-            color: Palette.grey,
-            size: 18.sp,
-          ),
-        ),
-        prefixIconConstraints: BoxConstraints(minWidth: 30.w),
-        hintStyle: TextStyle(
-          fontSize: 15.sp,
-          color: Palette.grey,
-        ),
-        filled: true,
-        fillColor: Palette.white,
-        disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.r),
-          borderSide: BorderSide(
-            color: Palette.white,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.r),
-          borderSide: BorderSide(
-            color: Palette.white,
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.r),
-          borderSide: BorderSide(
-            color: Palette.white,
-          ),
-        ),
-      ),
-    );
+    return AnimatedBuilder(
+        animation: animations.searchRow,
+        builder: (context, child) {
+          return SizedBox(
+            width: animations.searchRow.value *
+                (MediaQuery.of(context).size.width * 0.5),
+            height: 45.h,
+            child: TextField(
+              textAlignVertical: TextAlignVertical(y: 1),
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: Palette.grey,
+              ),
+              decoration: InputDecoration(
+                prefixIcon: FadeTransition(
+                  opacity: animations.hintTextFade,
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(left: 15.w, right: 4.w),
+                        child: Icon(
+                          MingCute.location_fill,
+                          color: Palette.grey,
+                          size: 18.sp,
+                        ),
+                      ),
+                      Text(
+                        'Saint Petersburg',
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          color: Palette.grey,
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+                hintStyle: TextStyle(
+                  fontSize: 15.sp,
+                  color: Palette.grey,
+                ),
+                filled: true,
+                fillColor: Palette.white,
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                  borderSide: BorderSide(
+                    color: Palette.white,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                  borderSide: BorderSide(
+                    color: Palette.white,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                  borderSide: BorderSide(
+                    color: Palette.white,
+                  ),
+                ),
+              ),
+            ),
+          );
+        });
   }
 }
 
@@ -619,6 +632,7 @@ class HomeViewAnimations {
 
   late final Animation<double> pageFade;
   late final Animation<double> searchRow;
+  late final Animation<double> hintTextFade;
   late final Animation<double> nameTextFade;
   late final Animation<double> textFade;
   late final Animation<double> offersRow;
@@ -628,8 +642,8 @@ class HomeViewAnimations {
   HomeViewAnimations(TickerProvider vsync)
       : pageFadeController = AnimationController(
             vsync: vsync, duration: Duration(milliseconds: 400)),
-        searchRowController = AnimationController(
-            vsync: vsync, duration: Duration(milliseconds: 600)),
+        searchRowController =
+            AnimationController(vsync: vsync, duration: Duration(seconds: 1)),
         nameTextFadeController = AnimationController(
             vsync: vsync, duration: Duration(milliseconds: 800)),
         textFadeController = AnimationController(
@@ -640,7 +654,13 @@ class HomeViewAnimations {
             AnimationController(vsync: vsync, duration: Duration(seconds: 1)) {
     pageFade = Tween<double>(begin: 1, end: 0).animate(pageFadeController);
     searchRow = Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(curve: Curves.ease, parent: searchRowController));
+        CurvedAnimation(curve: Curves.easeOut, parent: searchRowController));
+    hintTextFade = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: searchRowController,
+        curve: Interval(0.8, 1, curve: Curves.easeOut),
+      ),
+    );
     nameTextFade =
         Tween<double>(begin: 0, end: 1).animate(nameTextFadeController);
     textFade = Tween<double>(begin: 0, end: 1).animate(textFadeController);

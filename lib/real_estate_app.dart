@@ -59,8 +59,10 @@ class _RealEstateAppState extends State<RealEstateApp>
   }
 
   Future<void> animateBottomBar() async {
-    await Future.delayed(const Duration(milliseconds: 6000));
-    _bottomBarSlideController.forward();
+    await Future.delayed(const Duration(milliseconds: 7000));
+    if (mounted) {
+      _bottomBarSlideController.forward();
+    }
   }
 
   @override
