@@ -39,7 +39,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
           .animateTo(
         0.66,
         duration: const Duration(milliseconds: 600),
-        curve: Curves.easeInOut,
+        curve: Curves.fastOutSlowIn,
       )
           .then((value) {
         setState(() {
