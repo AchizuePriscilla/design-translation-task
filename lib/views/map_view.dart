@@ -1,10 +1,10 @@
-import 'dart:ui';
 import 'package:design_task/utils/custom_icon_button_with_splash_effect.dart';
 import 'package:design_task/utils/custom_spacer.dart';
 import 'package:design_task/utils/palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'package:latlong2/latlong.dart';
 
 class MapPage extends StatefulWidget {
@@ -164,12 +164,12 @@ class OptionsCard extends StatelessWidget {
                     title: "Cozy areas",
                   ),
                   CardRow(
-                    iconData: Icons.wallet_outlined,
+                    iconData: LineAwesome.wallet_solid,
                     color: Palette.primary,
                     title: "Price",
                   ),
                   CardRow(
-                    iconData: Icons.location_on,
+                    iconData: Icons.domain_rounded,
                     title: "Infrastructure",
                   ),
                   CardRow(
@@ -210,44 +210,43 @@ class BottomButtons extends StatelessWidget {
                     },
                     outerWidthAndHeight: 50.h,
                     innerWidthAndHeight: 31.h,
-                    child: BlurredButtonWidget(),
+                    child: TransparentButtonWidget(
+                      iconData: Icons.layers_outlined,
+                    ),
                   ),
                 ),
                 CustomSpacer(),
                 ScaleTransition(
                     scale: animations.elementsScaleValue,
                     alignment: Alignment.center,
-                    child: BlurredButtonWidget())
+                    child: TransparentButtonWidget(
+                      iconData: MingCute.navigation_line,
+                    ))
               ],
             ),
             const Spacer(),
             ScaleTransition(
               scale: animations.elementsScaleValue,
               alignment: Alignment.center,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(30.r),
-                child: Container(
-                  height: 50.h,
-                  padding:
-                      EdgeInsets.symmetric(vertical: 10.h, horizontal: 15.w),
-                  decoration: BoxDecoration(
-                    color: Palette.white.withValues(alpha: .5),
-                    borderRadius: BorderRadius.circular(25.r),
-                  ),
-                  child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-                      child: Row(
-                        children: [
-                          Icon(Icons.filter_list,
-                              color: Palette.white, size: 20.sp),
-                          CustomSpacer(horizontal: true),
-                          Text("List of variants",
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                color: Palette.white,
-                              )),
-                        ],
-                      )),
+              child: Container(
+                height: 45.h,
+                padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 15.w),
+                decoration: BoxDecoration(
+                  color: Palette.white.withValues(alpha: .4),
+                  borderRadius: BorderRadius.circular(25.r),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.format_align_left_sharp,
+                        color: Palette.white.withValues(alpha: .7),
+                        size: 20.sp),
+                    CustomSpacer(horizontal: true),
+                    Text("List of variants",
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Palette.white,
+                        )),
+                  ],
                 ),
               ),
             ),
@@ -282,12 +281,16 @@ class SearchRow extends StatelessWidget {
                 color: Palette.black,
               ),
               decoration: InputDecoration(
-                hintText: 'Abuja, Nigeria',
+                hintText: 'Saint Petersburg',
                 enabled: false,
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: Palette.black,
+                prefixIcon: Padding(
+                  padding: EdgeInsets.only(left: 15.w, right: 4.w),
+                  child: Icon(
+                    BoxIcons.bx_search,
+                    color: Palette.black,
+                  ),
                 ),
+                prefixIconConstraints: BoxConstraints(minWidth: 30.w),
                 hintStyle: TextStyle(
                   fontSize: 14.sp,
                   color: Palette.black,
@@ -314,7 +317,7 @@ class SearchRow extends StatelessWidget {
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.filter_list, color: Colors.black),
+              child: Icon(MingCute.settings_6_line, color: Colors.black),
             ),
           ),
         ],
@@ -323,12 +326,12 @@ class SearchRow extends StatelessWidget {
   }
 }
 
-class BlurredButtonWidget extends StatelessWidget {
-  const BlurredButtonWidget({
+class TransparentButtonWidget extends StatelessWidget {
+  const TransparentButtonWidget({
     super.key,
-    this.child,
+    required this.iconData,
   });
-  final Widget? child;
+  final IconData iconData;
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
@@ -337,10 +340,9 @@ class BlurredButtonWidget extends StatelessWidget {
         width: 50.h,
         height: 50.h,
         decoration: BoxDecoration(
-            color: Palette.white.withValues(alpha: .7), shape: BoxShape.circle),
-        child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-            child: Icon(Icons.filter_list, size: 20.sp, color: Palette.white)),
+            color: Palette.white.withValues(alpha: .4), shape: BoxShape.circle),
+        child: Icon(iconData,
+            size: 20.sp, color: Palette.white.withValues(alpha: .7)),
       ),
     );
   }

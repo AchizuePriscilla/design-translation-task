@@ -23,35 +23,38 @@ class CustomIconButtonWithSplashEffect extends StatefulWidget {
 class _CustomIconButtonWithSplashEffectState
     extends State<CustomIconButtonWithSplashEffect>
     with TickerProviderStateMixin {
-  late AnimationController _innerSplashController;
-  late AnimationController _outerSplashController;
-  late Animation<double> _innerSplashRadiusValue;
-  late Animation<double> _outerSplashRadiusValue;
+  late AnimationController _splashController;
+  late Animation<double> _outerSplashAnimation;
+  late Animation<double> _innerSplashAnimation;
 
   @override
   void initState() {
     super.initState();
-    _innerSplashController = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 200),
-    );
-    _outerSplashController = AnimationController(
+    _splashController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 100),
     );
-
-    _innerSplashRadiusValue = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _innerSplashController, curve: Curves.easeInOut),
-    );
-    _outerSplashRadiusValue = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _outerSplashController, curve: Curves.easeInOut),
+    _innerSplashAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 0.5),
+        weight: 50,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 0.5, end: 1.0),
+        weight: 50,
+      ),
+    ]).animate(CurvedAnimation(parent: _splashController, curve: Curves.ease));
+    _outerSplashAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _splashController,
+        curve: Interval(0.1, 1.0, curve: Curves.ease),
+      ),
     );
   }
 
   @override
   void dispose() {
-    _innerSplashController.dispose();
-    _outerSplashController.dispose();
+    _splashController.dispose();
     super.dispose();
   }
 
@@ -59,10 +62,8 @@ class _CustomIconButtonWithSplashEffectState
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () async {
-        await _innerSplashController.forward();
-        _outerSplashController.forward();
-        _innerSplashController.reverse();
-        _outerSplashController.reset();
+        await _splashController.forward();
+        _splashController.reset();
         widget.onTap();
       },
       child: Stack(
@@ -73,44 +74,52 @@ class _CustomIconButtonWithSplashEffectState
             alignment: Alignment.center,
             children: [
               AnimatedBuilder(
-                  animation: _outerSplashRadiusValue,
-                  builder: (context, child) {
-                    return Visibility(
-                      visible: _outerSplashRadiusValue.value < 1,
-                      child: Container(
-                        width: widget.outerWidthAndHeight -
-                            (15.h * _outerSplashRadiusValue.value),
-                        height: widget.outerWidthAndHeight -
-                            (15.h * _outerSplashRadiusValue.value),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(30.r),
-                          border: Border.all(color: Palette.white),
-                        ),
+                animation: _outerSplashAnimation,
+                builder: (context, child) {
+                  double outerSplashHeightAndWidth =
+                      widget.outerWidthAndHeight -
+                          15.h * (_outerSplashAnimation.value);
+
+                  return Visibility(
+                    visible: _outerSplashAnimation.value < 1 &&
+                        _splashController.isAnimating &&
+                        outerSplashHeightAndWidth <=
+                            widget.outerWidthAndHeight - 10.h,
+                    child: Container(
+                      width: outerSplashHeightAndWidth,
+                      height: outerSplashHeightAndWidth,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(30.r),
+                        border: Border.all(color: Palette.white),
                       ),
-                    );
-                  }),
+                    ),
+                  );
+                },
+              ),
               AnimatedBuilder(
-                  animation: _innerSplashRadiusValue,
-                  builder: (context, child) {
-                    return Visibility(
-                      visible: _innerSplashRadiusValue.value < 1,
-                      child: Container(
-                        width: widget.innerWidthAndHeight +
-                            (20.h * _innerSplashRadiusValue.value),
-                        height: widget.innerWidthAndHeight +
-                            (20.h * _innerSplashRadiusValue.value),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(30.r),
-                          border: Border.all(
-                            color: Palette.white,
-                            width: 5.h - (4.h * _innerSplashRadiusValue.value),
-                          ),
+                animation: _innerSplashAnimation,
+                builder: (context, child) {
+                  return Visibility(
+                    visible: _innerSplashAnimation.value >= -0.5 &&
+                        _splashController.isAnimating,
+                    child: Container(
+                      width: widget.innerWidthAndHeight +
+                          (15.h * _innerSplashAnimation.value),
+                      height: widget.innerWidthAndHeight +
+                          (15.h * _innerSplashAnimation.value),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(30.r),
+                        border: Border.all(
+                          color: Palette.white,
+                          width: 11.h - (10.h * _innerSplashAnimation.value),
                         ),
                       ),
-                    );
-                  }),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ],

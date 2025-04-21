@@ -4,6 +4,7 @@ import 'package:design_task/views/map_view.dart';
 import 'package:design_task/utils/palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:icons_plus/icons_plus.dart';
 
 class RealEstateApp extends StatefulWidget {
   const RealEstateApp({super.key});
@@ -20,11 +21,11 @@ class _RealEstateAppState extends State<RealEstateApp>
   late Animation<double> _pageFade;
   late Animation<Offset> _bottomBarSlide;
   final List<IconData> _icons = [
-    Icons.search_rounded,
-    Icons.chat_bubble_rounded,
-    Icons.home_rounded,
-    Icons.favorite_rounded,
-    Icons.person_2_rounded,
+    BoxIcons.bxs_search,
+    MingCute.message_1_fill,
+    MingCute.home_5_fill,
+    MingCute.heart_fill,
+    MingCute.user_3_fill,
   ];
   final List<Widget> _pages = [
     MapPage(),
@@ -44,7 +45,7 @@ class _RealEstateAppState extends State<RealEstateApp>
     super.initState();
     _pageFadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 200),
     );
     _bottomBarSlideController = AnimationController(
       vsync: this,

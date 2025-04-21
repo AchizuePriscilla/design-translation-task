@@ -3,6 +3,7 @@ import 'package:design_task/utils/custom_spacer.dart';
 import 'package:design_task/utils/palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:icons_plus/icons_plus.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({
@@ -21,6 +22,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _homeViewAnimations = HomeViewAnimations(this);
+
     Future.microtask(() => _animateElements());
   }
 
@@ -28,21 +30,23 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   Future<void> _animateElements() async {
     await _homeViewAnimations.searchRowController.forward();
     await Future.delayed(Duration(milliseconds: 100));
-    await _homeViewAnimations.nameTextFadeController.forward();
-    await _homeViewAnimations.textFadeController.forward();
-    _homeViewAnimations.offersRowController.forward();
-    await _homeViewAnimations.numberOfOffersController.forward();
-    await _draggableScrollableController
-        .animateTo(
-      0.66,
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeInOut,
-    )
-        .then((value) {
-      setState(() {
-        _bottomSheetMinHeight = 0.3;
+    if (mounted) {
+      await _homeViewAnimations.nameTextFadeController.forward();
+      await _homeViewAnimations.textFadeController.forward();
+      _homeViewAnimations.offersRowController.forward();
+      await _homeViewAnimations.numberOfOffersController.forward();
+      await _draggableScrollableController
+          .animateTo(
+        0.66,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOut,
+      )
+          .then((value) {
+        setState(() {
+          _bottomSheetMinHeight = 0.3;
+        });
       });
-    });
+    }
   }
 
   @override
@@ -327,27 +331,27 @@ class HouseImageContainer extends StatefulWidget {
 
 class _HouseImageContainerState extends State<HouseImageContainer>
     with TickerProviderStateMixin {
-  late final AnimationController sliderSizeAndAddressFadeController;
-  late final AnimationController sliderScaleController;
-  late final Animation<double> sliderScale;
-  late final Animation<double> addressFade;
-  late final Animation<double> sliderSize;
-  late double easeOutEnd;
-  late double widthMultiplier;
+  late final AnimationController _sliderSizeAndAddressFadeController;
+  late final AnimationController _sliderScaleController;
+  late final Animation<double> _sliderScale;
+  late final Animation<double> _addressFade;
+  late final Animation<double> _sliderSize;
+  late final double easeOutEnd;
+  late final double widthMultiplier;
   @override
   void initState() {
     easeOutEnd =
         (0.5 + (1.0 - widget.scaleAnimationSpeedFactor) * 0.5).clamp(0.0, 1.0);
     widthMultiplier =
         (1 + (widget.slideAnimationSpeedFactor.clamp(0.1, 10.0) - 1) * 0.5);
-    sliderSizeAndAddressFadeController =
+    _sliderSizeAndAddressFadeController =
         AnimationController(vsync: this, duration: Duration(seconds: 1));
-    sliderScaleController = AnimationController(
+    _sliderScaleController = AnimationController(
         vsync: this,
         duration: Duration(milliseconds: (easeOutEnd * 1000).toInt()));
-    sliderScale = Tween<double>(begin: 0, end: 1).animate(
+    _sliderScale = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
-        parent: sliderScaleController,
+        parent: _sliderScaleController,
         curve: Interval(
           0.0,
           easeOutEnd,
@@ -355,15 +359,15 @@ class _HouseImageContainerState extends State<HouseImageContainer>
         ),
       ),
     );
-    sliderSize = Tween<double>(begin: .09, end: 1).animate(
+    _sliderSize = Tween<double>(begin: .09, end: 1).animate(
       CurvedAnimation(
-        parent: sliderSizeAndAddressFadeController,
+        parent: _sliderSizeAndAddressFadeController,
         curve: Interval(0.09, 1, curve: Curves.easeOut),
       ),
     );
-    addressFade = Tween<double>(begin: 0, end: 1).animate(
+    _addressFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
-        parent: sliderSizeAndAddressFadeController,
+        parent: _sliderSizeAndAddressFadeController,
         curve: Interval(0.5, 1, curve: Curves.easeOut),
       ),
     );
@@ -373,8 +377,17 @@ class _HouseImageContainerState extends State<HouseImageContainer>
 
   Future<void> animate() async {
     await Future.delayed(Duration(milliseconds: 3800));
-    await sliderScaleController.forward();
-    sliderSizeAndAddressFadeController.forward();
+    if (mounted) {
+      await _sliderScaleController.forward();
+      _sliderSizeAndAddressFadeController.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _sliderScaleController.dispose();
+    _sliderSizeAndAddressFadeController.dispose();
+    super.dispose();
   }
 
   @override
@@ -394,7 +407,7 @@ class _HouseImageContainerState extends State<HouseImageContainer>
             ),
           ),
           AnimatedBuilder(
-              animation: sliderSize,
+              animation: _sliderSize,
               builder: (context, child) {
                 return Align(
                   alignment: Alignment.bottomLeft,
@@ -402,20 +415,20 @@ class _HouseImageContainerState extends State<HouseImageContainer>
                     padding:
                         EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
                     child: ScaleTransition(
-                      scale: sliderScale,
+                      scale: _sliderScale,
                       alignment: Alignment.centerLeft,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(32.r),
                         child: Container(
                           padding: EdgeInsets.fromLTRB(
-                            sliderSize.value == 0.09 ? 1.h : 8.w,
+                            _sliderSize.value == 0.09 ? 1.h : 8.w,
                             3.h,
                             1.w,
                             3.h,
                           ),
-                          width: sliderSize.value != 0.09
+                          width: _sliderSize.value != 0.09
                               ? MediaQuery.of(context).size.width *
-                                  (sliderSize.value * widthMultiplier)
+                                  (_sliderSize.value * widthMultiplier)
                               : !widget.isFirstImage
                                   ? 32.w
                                   : 42.w,
@@ -431,9 +444,9 @@ class _HouseImageContainerState extends State<HouseImageContainer>
                                   ? Alignment.center
                                   : Alignment.centerLeft,
                               children: [
-                                if (sliderSize.value != 0.09)
+                                if (_sliderSize.value != 0.09)
                                   FadeTransition(
-                                    opacity: addressFade,
+                                    opacity: _addressFade,
                                     child: Text(
                                       widget.address,
                                       style: TextStyle(
@@ -442,9 +455,9 @@ class _HouseImageContainerState extends State<HouseImageContainer>
                                     ),
                                   ),
                                 ScaleTransition(
-                                  scale: sliderScale,
+                                  scale: _sliderScale,
                                   child: Align(
-                                    alignment: sliderSize.value == 0.09
+                                    alignment: _sliderSize.value == 0.09
                                         ? Alignment.center
                                         : Alignment.centerRight,
                                     child: Container(
@@ -538,12 +551,12 @@ class SearchTextField extends StatelessWidget {
         prefixIcon: Padding(
           padding: EdgeInsets.only(left: 15.w, right: 4.w),
           child: Icon(
-            Icons.location_on_rounded,
+            MingCute.location_fill,
             color: Palette.grey,
             size: 18.sp,
           ),
         ),
-        prefixIconConstraints: BoxConstraints(minWidth: 30),
+        prefixIconConstraints: BoxConstraints(minWidth: 30.w),
         hintStyle: TextStyle(
           fontSize: 15.sp,
           color: Palette.grey,
