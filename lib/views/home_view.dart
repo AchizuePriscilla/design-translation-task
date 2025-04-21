@@ -43,11 +43,6 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         _bottomSheetMinHeight = 0.3;
       });
     });
-    await _homeViewAnimations.sliderScaleController.forward();
-    await Future.delayed(
-      const Duration(milliseconds: 300),
-    );
-    _homeViewAnimations.sliderSizeAndAddressFadeController.forward();
   }
 
   @override
@@ -92,7 +87,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                   child: Text(
                     "Hi, Priscilla",
                     style: TextStyle(
-                      fontSize: 22.sp,
+                      fontSize: 23.sp,
                       color: Palette.grey,
                     ),
                   ),
@@ -149,7 +144,8 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                           isFirstImage: true,
                           address: "Gladkova St., 25",
                           animations: _homeViewAnimations,
-                          slideAnimationSpeedFactor: 3,
+                          slideAnimationSpeedFactor: 2,
+                          scaleAnimationSpeedFactor: .8,
                         ),
                         CustomSpacer(
                           flex: 3,
@@ -160,7 +156,8 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                               HouseImageContainer(
                                   imagePath: "two",
                                   address: "Gubina St., 11",
-                                  slideAnimationSpeedFactor: 0,
+                                  slideAnimationSpeedFactor: 0.1,
+                                  scaleAnimationSpeedFactor: 0.1,
                                   animations: _homeViewAnimations),
                               CustomSpacer(
                                 horizontal: true,
@@ -171,13 +168,15 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                                     HouseImageContainer(
                                         imagePath: "three",
                                         address: "Trefoleva St., 43",
-                                        slideAnimationSpeedFactor: 0.3,
+                                        slideAnimationSpeedFactor: 0.7,
+                                        scaleAnimationSpeedFactor: 0.3,
                                         animations: _homeViewAnimations),
                                     CustomSpacer(),
                                     HouseImageContainer(
                                         imagePath: "four",
                                         address: "Sedova St., 22",
                                         slideAnimationSpeedFactor: 0.1,
+                                        scaleAnimationSpeedFactor: 0.1,
                                         animations: _homeViewAnimations),
                                   ],
                                 ),
@@ -214,7 +213,7 @@ class SearchRow extends StatelessWidget {
               return SizedBox(
                 width: _homeViewAnimations.searchRow.value *
                     (MediaQuery.of(context).size.width * 0.5),
-                height: 40.h,
+                height: 45.h,
                 child: SearchTextField(),
               );
             }),
@@ -222,8 +221,8 @@ class SearchRow extends StatelessWidget {
         ScaleTransition(
           scale: _homeViewAnimations.searchRow,
           child: Container(
-            width: 48.w,
-            height: 48.h,
+            width: 49.w,
+            height: 49.h,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -307,20 +306,77 @@ class OffersRow extends StatelessWidget {
   }
 }
 
-class HouseImageContainer extends StatelessWidget {
-  const HouseImageContainer({
-    super.key,
-    this.isFirstImage = false,
-    required this.imagePath,
-    required this.address,
-    required this.animations,
-    required this.slideAnimationSpeedFactor,
-  });
+class HouseImageContainer extends StatefulWidget {
+  const HouseImageContainer(
+      {super.key,
+      this.isFirstImage = false,
+      required this.imagePath,
+      required this.address,
+      required this.animations,
+      required this.slideAnimationSpeedFactor,
+      required this.scaleAnimationSpeedFactor});
   final String imagePath;
   final String address;
   final bool isFirstImage;
   final HomeViewAnimations animations;
   final double slideAnimationSpeedFactor;
+  final double scaleAnimationSpeedFactor;
+  @override
+  State<HouseImageContainer> createState() => _HouseImageContainerState();
+}
+
+class _HouseImageContainerState extends State<HouseImageContainer>
+    with TickerProviderStateMixin {
+  late final AnimationController sliderSizeAndAddressFadeController;
+  late final AnimationController sliderScaleController;
+  late final Animation<double> sliderScale;
+  late final Animation<double> addressFade;
+  late final Animation<double> sliderSize;
+  late double easeOutEnd;
+  late double widthMultiplier;
+  @override
+  void initState() {
+    easeOutEnd =
+        (0.5 + (1.0 - widget.scaleAnimationSpeedFactor) * 0.5).clamp(0.0, 1.0);
+    widthMultiplier =
+        (1 + (widget.slideAnimationSpeedFactor.clamp(0.1, 10.0) - 1) * 0.5);
+    sliderSizeAndAddressFadeController =
+        AnimationController(vsync: this, duration: Duration(seconds: 1));
+    sliderScaleController = AnimationController(
+        vsync: this,
+        duration: Duration(milliseconds: (easeOutEnd * 1000).toInt()));
+    sliderScale = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: sliderScaleController,
+        curve: Interval(
+          0.0,
+          easeOutEnd,
+          curve: Curves.easeOut,
+        ),
+      ),
+    );
+    sliderSize = Tween<double>(begin: .09, end: 1).animate(
+      CurvedAnimation(
+        parent: sliderSizeAndAddressFadeController,
+        curve: Interval(0.09, 1, curve: Curves.easeOut),
+      ),
+    );
+    addressFade = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: sliderSizeAndAddressFadeController,
+        curve: Interval(0.5, 1, curve: Curves.easeOut),
+      ),
+    );
+    super.initState();
+    Future.microtask(() => animate());
+  }
+
+  Future<void> animate() async {
+    await Future.delayed(Duration(milliseconds: 3800));
+    await sliderScaleController.forward();
+    sliderSizeAndAddressFadeController.forward();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Expanded(
@@ -328,15 +384,17 @@ class HouseImageContainer extends StatelessWidget {
         children: [
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(isFirstImage ? 30.r : 15.r),
+              borderRadius:
+                  BorderRadius.circular(widget.isFirstImage ? 32.r : 17.r),
               image: DecorationImage(
-                image: AssetImage('assets/images/house_$imagePath.jpg'),
+                image:
+                    AssetImage('assets/images/house_${widget.imagePath}.jpg'),
                 fit: BoxFit.cover,
               ),
             ),
           ),
           AnimatedBuilder(
-              animation: animations.sliderSize,
+              animation: sliderSize,
               builder: (context, child) {
                 return Align(
                   alignment: Alignment.bottomLeft,
@@ -344,27 +402,24 @@ class HouseImageContainer extends StatelessWidget {
                     padding:
                         EdgeInsets.symmetric(vertical: 10.h, horizontal: 8.w),
                     child: ScaleTransition(
-                      scale: animations.sliderScale,
+                      scale: sliderScale,
                       alignment: Alignment.centerLeft,
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(30.r),
+                        borderRadius: BorderRadius.circular(32.r),
                         child: Container(
                           padding: EdgeInsets.fromLTRB(
-                            animations.sliderSize.value == 0.09 ? 1.h : 8.w,
+                            sliderSize.value == 0.09 ? 1.h : 8.w,
                             3.h,
                             1.w,
                             3.h,
                           ),
-                          width: animations.sliderSize.value != 0.09
+                          width: sliderSize.value != 0.09
                               ? MediaQuery.of(context).size.width *
-                                  (animations.sliderSize.value *
-                                      (1 +
-                                          (slideAnimationSpeedFactor - 1) *
-                                              0.5))
-                              : !isFirstImage
-                                  ? 30.w
-                                  : 40.w,
-                          height: !isFirstImage ? 30.w : 40.h,
+                                  (sliderSize.value * widthMultiplier)
+                              : !widget.isFirstImage
+                                  ? 32.w
+                                  : 42.w,
+                          height: !widget.isFirstImage ? 32.w : 42.h,
                           decoration: BoxDecoration(
                             color: Palette.white.withValues(alpha: .5),
                             borderRadius: BorderRadius.circular(30.r),
@@ -372,37 +427,38 @@ class HouseImageContainer extends StatelessWidget {
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
                             child: Stack(
-                              alignment: isFirstImage
+                              alignment: widget.isFirstImage
                                   ? Alignment.center
                                   : Alignment.centerLeft,
                               children: [
-                                if (animations.sliderSize.value != 0.09)
+                                if (sliderSize.value != 0.09)
                                   FadeTransition(
-                                    opacity: animations.addressFade,
+                                    opacity: addressFade,
                                     child: Text(
-                                      address,
+                                      widget.address,
                                       style: TextStyle(
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ),
                                 ScaleTransition(
-                                  scale: animations.sliderScale,
+                                  scale: sliderScale,
                                   child: Align(
-                                    alignment:
-                                        animations.sliderSize.value == 0.09
-                                            ? Alignment.center
-                                            : Alignment.centerRight,
+                                    alignment: sliderSize.value == 0.09
+                                        ? Alignment.center
+                                        : Alignment.centerRight,
                                     child: Container(
-                                      width: !isFirstImage ? 30.w : 40.w,
-                                      height: !isFirstImage ? 30.w : 40.h,
+                                      width: !widget.isFirstImage ? 30.w : 40.w,
+                                      height:
+                                          !widget.isFirstImage ? 30.w : 40.h,
                                       decoration: BoxDecoration(
                                         color: Palette.white,
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         Icons.arrow_forward_ios_rounded,
-                                        size: !isFirstImage ? 8.sp : 11.sp,
+                                        size:
+                                            !widget.isFirstImage ? 8.sp : 11.sp,
                                         color: Palette.grey,
                                       ),
                                     ),
@@ -472,25 +528,41 @@ class SearchTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextField(
-      textAlignVertical: TextAlignVertical(y: 0.5),
+      textAlignVertical: TextAlignVertical(y: 1),
       style: TextStyle(
         fontSize: 14.sp,
         color: Palette.grey,
       ),
       decoration: InputDecoration(
-        hintText: 'Search',
-        enabled: false,
-        prefixIcon: Icon(
-          Icons.location_on_rounded,
-          color: Palette.grey,
+        hintText: 'Saint Petersburg',
+        prefixIcon: Padding(
+          padding: EdgeInsets.only(left: 15.w, right: 4.w),
+          child: Icon(
+            Icons.location_on_rounded,
+            color: Palette.grey,
+            size: 18.sp,
+          ),
         ),
+        prefixIconConstraints: BoxConstraints(minWidth: 30),
         hintStyle: TextStyle(
-          fontSize: 14.sp,
+          fontSize: 15.sp,
           color: Palette.grey,
         ),
         filled: true,
         fillColor: Palette.white,
         disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.r),
+          borderSide: BorderSide(
+            color: Palette.white,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.r),
+          borderSide: BorderSide(
+            color: Palette.white,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.r),
           borderSide: BorderSide(
             color: Palette.white,
@@ -508,9 +580,6 @@ class HomeViewAnimations {
   final AnimationController textFadeController;
   final AnimationController offersRowController;
   final AnimationController numberOfOffersController;
-  final AnimationController sliderScaleController;
-  final AnimationController sliderSizeAndAddressFadeController;
-  final AnimationController bottomNavBarController;
 
   late final Animation<double> pageFade;
   late final Animation<double> searchRow;
@@ -518,9 +587,6 @@ class HomeViewAnimations {
   late final Animation<double> textFade;
   late final Animation<double> offersRow;
   late final Animation<double> numberOfOffers;
-  late final Animation<double> sliderScale;
-  late final Animation<double> sliderSize;
-  late final Animation<double> addressFade;
   late final Animation<double> bottomNavBar;
 
   HomeViewAnimations(TickerProvider vsync)
@@ -535,13 +601,7 @@ class HomeViewAnimations {
         offersRowController = AnimationController(
             vsync: vsync, duration: Duration(milliseconds: 500)),
         numberOfOffersController =
-            AnimationController(vsync: vsync, duration: Duration(seconds: 1)),
-        sliderScaleController = AnimationController(
-            vsync: vsync, duration: Duration(milliseconds: 800)),
-        sliderSizeAndAddressFadeController =
-            AnimationController(vsync: vsync, duration: Duration(seconds: 2)),
-        bottomNavBarController = AnimationController(
-            vsync: vsync, duration: Duration(milliseconds: 800)) {
+            AnimationController(vsync: vsync, duration: Duration(seconds: 1)) {
     pageFade = Tween<double>(begin: 1, end: 0).animate(pageFadeController);
     searchRow = Tween<double>(begin: 0, end: 1).animate(searchRowController);
     nameTextFade =
@@ -550,26 +610,6 @@ class HomeViewAnimations {
     offersRow = Tween<double>(begin: 0, end: 1).animate(offersRowController);
     numberOfOffers =
         Tween<double>(begin: 0, end: 1).animate(numberOfOffersController);
-    sliderScale =
-        Tween<double>(begin: 0, end: 1).animate(sliderScaleController);
-    sliderSize = Tween<double>(begin: .09, end: 1).animate(
-      CurvedAnimation(
-        parent: sliderSizeAndAddressFadeController,
-        curve: Interval(0.09, 1, curve: Curves.easeOut),
-      ),
-    );
-    addressFade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: sliderSizeAndAddressFadeController,
-        curve: Interval(0.5, 1, curve: Curves.easeOut),
-      ),
-    );
-    bottomNavBar = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: bottomNavBarController,
-        curve: Curves.easeOut,
-      ),
-    );
   }
 
   void dispose() {
@@ -578,9 +618,6 @@ class HomeViewAnimations {
     nameTextFadeController.dispose();
     offersRowController.dispose();
     numberOfOffersController.dispose();
-    sliderScaleController.dispose();
-    sliderSizeAndAddressFadeController.dispose();
     pageFadeController.dispose();
-    bottomNavBarController.dispose();
   }
 }
