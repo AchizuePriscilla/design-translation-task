@@ -120,82 +120,104 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
               ],
             ),
           ),
-          DraggableScrollableSheet(
-              initialChildSize: _bottomSheetMinHeight,
-              minChildSize: _bottomSheetMinHeight,
-              maxChildSize: 0.66,
-              expand: false,
-              controller: _draggableScrollableController,
-              shouldCloseOnMinExtent: false,
-              builder: (context, controller) {
-                return SingleChildScrollView(
-                  controller: controller,
-                  child: Container(
-                    height: MediaQuery.of(context).size.height * 0.65,
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
-                    decoration: BoxDecoration(
-                      color: Palette.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(30.r),
-                        topRight: Radius.circular(30.r),
-                      ),
-                    ),
-                    child: Column(
+          BottomSheet(
+              bottomSheetMinHeight: _bottomSheetMinHeight,
+              draggableScrollableController: _draggableScrollableController,
+              homeViewAnimations: _homeViewAnimations),
+        ],
+      ),
+    );
+  }
+}
+
+class BottomSheet extends StatelessWidget {
+  const BottomSheet({
+    super.key,
+    required double bottomSheetMinHeight,
+    required DraggableScrollableController draggableScrollableController,
+    required HomeViewAnimations homeViewAnimations,
+  })  : _bottomSheetMinHeight = bottomSheetMinHeight,
+        _draggableScrollableController = draggableScrollableController,
+        _homeViewAnimations = homeViewAnimations;
+
+  final double _bottomSheetMinHeight;
+  final DraggableScrollableController _draggableScrollableController;
+  final HomeViewAnimations _homeViewAnimations;
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+        initialChildSize: _bottomSheetMinHeight,
+        minChildSize: _bottomSheetMinHeight,
+        maxChildSize: 0.66,
+        expand: false,
+        controller: _draggableScrollableController,
+        shouldCloseOnMinExtent: false,
+        builder: (context, controller) {
+          return SingleChildScrollView(
+            controller: controller,
+            child: Container(
+              height: MediaQuery.of(context).size.height * 0.65,
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: Palette.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(30.r),
+                  topRight: Radius.circular(30.r),
+                ),
+              ),
+              child: Column(
+                children: [
+                  HouseImageContainer(
+                    imagePath: "one",
+                    isFirstImage: true,
+                    address: "Gladkova St., 25",
+                    animations: _homeViewAnimations,
+                    slideAnimationSpeedFactor: 2,
+                    scaleAnimationSpeedFactor: .8,
+                  ),
+                  CustomSpacer(
+                    flex: 3,
+                  ),
+                  Expanded(
+                    child: Row(
                       children: [
                         HouseImageContainer(
-                          imagePath: "one",
-                          isFirstImage: true,
-                          address: "Gladkova St., 25",
-                          animations: _homeViewAnimations,
-                          slideAnimationSpeedFactor: 2,
-                          scaleAnimationSpeedFactor: .8,
-                        ),
+                            imagePath: "two",
+                            address: "Gubina St., 11",
+                            slideAnimationSpeedFactor: 0.1,
+                            scaleAnimationSpeedFactor: 0.1,
+                            animations: _homeViewAnimations),
                         CustomSpacer(
-                          flex: 3,
+                          horizontal: true,
                         ),
                         Expanded(
-                          child: Row(
+                          child: Column(
                             children: [
                               HouseImageContainer(
-                                  imagePath: "two",
-                                  address: "Gubina St., 11",
+                                  imagePath: "three",
+                                  address: "Trefoleva St., 43",
+                                  slideAnimationSpeedFactor: 0.7,
+                                  scaleAnimationSpeedFactor: 0.3,
+                                  animations: _homeViewAnimations),
+                              CustomSpacer(),
+                              HouseImageContainer(
+                                  imagePath: "four",
+                                  address: "Sedova St., 22",
                                   slideAnimationSpeedFactor: 0.1,
                                   scaleAnimationSpeedFactor: 0.1,
                                   animations: _homeViewAnimations),
-                              CustomSpacer(
-                                horizontal: true,
-                              ),
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    HouseImageContainer(
-                                        imagePath: "three",
-                                        address: "Trefoleva St., 43",
-                                        slideAnimationSpeedFactor: 0.7,
-                                        scaleAnimationSpeedFactor: 0.3,
-                                        animations: _homeViewAnimations),
-                                    CustomSpacer(),
-                                    HouseImageContainer(
-                                        imagePath: "four",
-                                        address: "Sedova St., 22",
-                                        slideAnimationSpeedFactor: 0.1,
-                                        scaleAnimationSpeedFactor: 0.1,
-                                        animations: _homeViewAnimations),
-                                  ],
-                                ),
-                              ),
                             ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                );
-              }),
-        ],
-      ),
-    );
+                ],
+              ),
+            ),
+          );
+        });
   }
 }
 
@@ -336,25 +358,26 @@ class _HouseImageContainerState extends State<HouseImageContainer>
   late final Animation<double> _sliderScale;
   late final Animation<double> _addressFade;
   late final Animation<double> _sliderSize;
-  late final double easeOutEnd;
-  late final double widthMultiplier;
+  late final double _scaleAnimationEndTime;
+  late final double _widthMultiplier;
   @override
   void initState() {
-    easeOutEnd =
+    _scaleAnimationEndTime =
         (0.5 + (1.0 - widget.scaleAnimationSpeedFactor) * 0.5).clamp(0.0, 1.0);
-    widthMultiplier =
+    _widthMultiplier =
         (1 + (widget.slideAnimationSpeedFactor.clamp(0.1, 10.0) - 1) * 0.5);
     _sliderSizeAndAddressFadeController =
         AnimationController(vsync: this, duration: Duration(seconds: 1));
     _sliderScaleController = AnimationController(
         vsync: this,
-        duration: Duration(milliseconds: (easeOutEnd * 1000).toInt()));
+        duration:
+            Duration(milliseconds: (_scaleAnimationEndTime * 1000).toInt()));
     _sliderScale = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _sliderScaleController,
         curve: Interval(
           0.0,
-          easeOutEnd,
+          _scaleAnimationEndTime,
           curve: Curves.easeOut,
         ),
       ),
@@ -428,7 +451,7 @@ class _HouseImageContainerState extends State<HouseImageContainer>
                           ),
                           width: _sliderSize.value != 0.09
                               ? MediaQuery.of(context).size.width *
-                                  (_sliderSize.value * widthMultiplier)
+                                  (_sliderSize.value * _widthMultiplier)
                               : !widget.isFirstImage
                                   ? 32.w
                                   : 42.w,
